@@ -8,15 +8,11 @@ module Jekyll
       attr_accessor :lsi
     end
 
-    # Valid post name regex.
-    MATCHER = /^(.+\/)*(\d+-\d+-\d+)-(.*)(\.[^.]+)$/
+    MATCHER = /^(.+\/)*(\d+-\d+-\d+)?-?(.*)(\.[^.]+)$/
 
-    # Post name validator. Post filenames must be like:
-    # 2008-11-05-my-awesome-post.textile
-    #
-    # Returns true if valid, false if not.
+    # don't bother validating post names. anything goes.
     def self.valid?(name)
-      name =~ MATCHER
+      true
     end
 
     attr_accessor :site
@@ -85,11 +81,15 @@ module Jekyll
     #
     # Returns -1, 0, 1
     def <=>(other)
-      cmp = self.date <=> other.date
+      _, post_number, post_title = self.slug.match /^(\d+)?(.*)$/
+      _, other_number, other_title = other.slug.match /^(\d+)?(.*)$/
+
+      cmp = post_number.to_i <=> other_number.to_i
       if 0 == cmp
-       cmp = self.slug <=> other.slug
+       cmp = post_title <=> other_title
       end
-      return cmp
+
+      cmp
     end
 
     # Extract information from the post filename.
@@ -99,7 +99,7 @@ module Jekyll
     # Returns nothing.
     def process(name)
       m, cats, date, slug, ext = *name.match(MATCHER)
-      self.date = Time.parse(date)
+      self.date = date ? Time.parse(date) : Time.now
       self.slug = slug
       self.ext = ext
     rescue ArgumentError
